@@ -1,0 +1,57 @@
+package com.wifi.app;
+
+/**
+ *UDPServer
+ *@author Winty wintys@gmail.com
+ *@version 2008-12-15
+ */
+import java.io.*;
+import java.net.*;
+
+import org.hibernate.Session;
+
+import com.wifi.model.Stock;
+import com.wifi.persistence.HibernateUtil;
+
+class App{
+
+    public static void main(String[] args)throws IOException{
+        DatagramSocket  server = new DatagramSocket(61000);
+		System.out.println("Hello World!");
+		
+		System.out.println("Maven + Hibernate + MySQL");
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        
+        session.beginTransaction();
+        Stock stock = new Stock();
+        
+        stock.setStockCode("4716");
+        stock.setStockName("GENMY");
+        
+        session.save(stock);
+        
+        session.getTransaction().commit();
+		
+        byte[] recvBuf = new byte[100];
+        while(true)
+        {
+            DatagramPacket recvPacket 
+                = new DatagramPacket(recvBuf , recvBuf.length);
+            server.receive(recvPacket);
+            String recvStr = new String(recvPacket.getData() , 0 , recvPacket.getLength());
+            System.out.println("Hello World!" + recvStr);
+            if ( recvStr.endsWith("bye")) {
+                break;
+            }
+            int port = recvPacket.getPort();
+            InetAddress addr = recvPacket.getAddress();
+            String sendStr = "Hello ! I'm Server";
+            byte[] sendBuf;
+            sendBuf = sendStr.getBytes();
+            DatagramPacket sendPacket 
+                = new DatagramPacket(sendBuf , sendBuf.length , addr , port );
+            server.send(sendPacket);
+        }
+        server.close();
+    }
+}
